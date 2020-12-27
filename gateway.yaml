@@ -1,0 +1,26 @@
+kind: Gateway
+apiVersion: networking.istio.io/v1alpha3
+metadata:
+  name: kubernetes-dashboard
+  namespace: kubernetes-dashboard
+spec:
+  servers:
+    - hosts:
+        - dashboard.example.com
+      port:
+        name: http
+        number: 80
+        protocol: HTTP
+      tls:
+        httpsRedirect: true
+    - hosts:
+        - dashboard.example.com
+      port:
+        name: https
+        number: 443
+        protocol: HTTPS
+      tls:
+        credentialName: kubernetes-dashboard-tls
+        mode: SIMPLE
+  selector:
+    app: istio-ingressgateway

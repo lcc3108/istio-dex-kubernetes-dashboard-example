@@ -1,0 +1,14 @@
+kind: VirtualService
+apiVersion: networking.istio.io/v1alpha3
+metadata:
+  name: kubernetes-dashboard
+  namespace: kubernetes-dashboard
+spec:
+  hosts:
+    - dashboard.example.com
+  http:
+    - route:
+        - destination:
+            host: kubernetes-dashboard.kubernetes-dashboard.svc.cluster.local
+  gateways:
+    - kubernetes-dashboard
