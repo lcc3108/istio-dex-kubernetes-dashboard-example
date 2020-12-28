@@ -1,3 +1,9 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dex
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -38,9 +44,9 @@ spec:
           #       name: github-client
           #       key: client-secret
           readinessProbe:
-          httpGet:
-            path: /healthz
-            port: 5556
+            httpGet:
+              path: /healthz
+              port: 5556
       volumes:
         - name: config
           configMap:
@@ -68,8 +74,8 @@ data:
       id: github
       name: GitHub
       config:
-        clientID: YOUR_CLIENT_KEY
-        clientSecret: YOUR_SECRET_KEY
+        clientID: 9e8db9d8aca3c2f623b8
+        clientSecret: 28bb946fe55dedc7727cba4e2cb66a9c1ee982cc
         redirectURI: https://dex.example.com/callback
         orgs:
         - name: blackcowmoo
@@ -130,4 +136,4 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: dex # Service account assigned to the dex pod, created above
-    namespace: default # The namespace dex is running in
+    namespace: dex # The namespace dex is running in
