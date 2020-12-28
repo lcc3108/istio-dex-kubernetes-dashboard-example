@@ -1,0 +1,108 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dashboard-oauth2-proxy
+  namespace: kubernetes-dashboard
+spec:
+  selector:
+    matchLabels:
+      app: dashboard-oauth2-proxy
+  template:
+    metadata:
+      labels:
+        app: dashboard-oauth2-proxy
+    spec:
+      containers:
+        - name: oauth2-proxy
+          image: quay.io/oauth2-proxy/oauth2-proxy:v6.1.1
+          args:
+            - --provider=oidc
+            - --cookie-secure=true
+            - --cookie-samesite=lax
+            - --cookie-refresh=1h
+            - --cookie-expire=4h
+            - --cookie-name=auth
+            - --set-authorization-header=true
+            - --email-domain=*
+            - --http-address=0.0.0.0:4180
+            - --upstream=static://200
+            - --skip-provider-button=true
+            - --whitelist-domain=https://dashboard.example.com/
+            - --oidc-issuer-url=https://dex.example.com
+            - --cookie-domain=example.com
+          env:
+            - name: OAUTH2_PROXY_CLIENT_ID
+              value: dashboard
+            - name: OAUTH2_PROXY_CLIENT_SECRET
+              value: dashboard
+            - name: OAUTH2_PROXY_COOKIE_SECRET
+              value: 4n9vD8W1K8Jg-vOsR0JW6A==
+          ports:
+            - containerPort: 4180
+              protocol: TCP
+          readinessProbe:
+            periodSeconds: 3
+            httpGet:
+              path: /ping
+              port: 4180
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dashboard-oauth2-proxy
+  namespace: kubernetes-dashboard
+spec:
+  selector:
+    app: dashboard-oauth2-proxy
+  ports:
+    - name: http
+      port: 4180
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: dashboard-authn-filter
+  namespace: istio-system
+spec:
+  workloadSelector:
+    labels:
+      istio: ingressgateway
+  configPatches:
+    - applyTo: HTTP_FILTER
+      match:
+        context: GATEWAY
+        listener:
+          filterChain:
+            filter:
+              name: envoy.http_connection_manager
+              subFilter:
+                name: istio.metadata_exchange
+            sni: dashboard.example.com
+      patch:
+        operation: INSERT_BEFORE
+        value:
+          name: envoy.ext_authz
+          typed_config:
+            "@type": "type.googleapis.com/envoy.config.filter.http.ext_authz.v2.ExtAuthz"
+            http_service:
+              server_uri:
+                uri: "http://dashboard-oauth2-proxy.kubernetes-dashboard.svc.cluster.local/"
+                timeout: 1.5s
+                cluster: outbound|4180||dashboard-oauth2-proxy.kubernetes-dashboard.svc.cluster.local
+              authorizationRequest:
+                allowedHeaders:
+                  patterns:
+                    - exact: "cookie"
+                    - exact: "authorization"
+              authorizationResponse:
+                allowedClientHeaders:
+                  patterns:
+                    - exact: "set-cookie"
+                    - exact: "authorization"
+                allowedUpstreamHeaders:
+                  patterns:
+                    - exact: "set-cookie"
+                    - exact: "authorization"
+---
+

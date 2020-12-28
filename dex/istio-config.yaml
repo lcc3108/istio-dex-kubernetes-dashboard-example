@@ -1,0 +1,55 @@
+apiVersion: cert-manager.io/v1alpha2
+kind: Certificate
+metadata:
+  name: dex
+  namespace: istio-system
+spec:
+  secretName: dex-tls
+  issuerRef:
+    name: letsencrypt-prod-istio
+    kind: ClusterIssuer
+  commonName: dex.example.com
+  dnsNames:
+    - dex.example.com
+---
+kind: Gateway
+apiVersion: networking.istio.io/v1alpha3
+metadata:
+  name: dex
+  namespace: dex
+spec:
+  servers:
+    - hosts:
+        - dex.example.com
+      port:
+        name: http
+        number: 80
+        protocol: HTTP
+      tls:
+        httpsRedirect: true
+    - hosts:
+        - dex.example.com
+      port:
+        name: https
+        number: 443
+        protocol: HTTPS
+      tls:
+        credentialName: dex-tls
+        mode: SIMPLE
+  selector:
+    app: istio-ingressgateway
+---
+kind: VirtualService
+apiVersion: networking.istio.io/v1alpha3
+metadata:
+  name: dex
+  namespace: dex
+spec:
+  hosts:
+    - dex.example.com
+  http:
+    - route:
+        - destination:
+            host: dex.dex.svc.cluster.local
+  gateways:
+    - dex
