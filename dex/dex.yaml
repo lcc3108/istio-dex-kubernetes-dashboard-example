@@ -74,11 +74,11 @@ data:
       id: github
       name: GitHub
       config:
-        clientID: 9e8db9d8aca3c2f623b8
-        clientSecret: 28bb946fe55dedc7727cba4e2cb66a9c1ee982cc
+        clientID: YOUR_GIT_CLIENT_ID
+        clientSecret: YOUR_GIT_SECRET
         redirectURI: https://dex.example.com/callback
         orgs:
-        - name: blackcowmoo
+        - name: YOUR_ORGS
     oauth2:
       skipApprovalScreen: true
     staticClients:
